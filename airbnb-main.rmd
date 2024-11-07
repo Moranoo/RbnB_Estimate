@@ -1,0 +1,99 @@
+```{r}
+# import des données
+data <- read.csv(choose.files())
+head(data)
+
+```
+
+```{r}
+# prétraitement des données
+# Enlever le "$" de chaque prix et transformer en numérique
+data$price <- as.numeric(gsub("\\$", "", data$price))
+
+# Supprimer les NA de plusieurs colonnes
+data <- data[!is.na(data$price),]
+data <- data[!is.na(data$review_scores_rating),]
+data <- data[!is.na(data$bathrooms),]
+data <- data[!is.na(data$bedrooms),]
+data$beds[is.na(data$beds)] <- 1
+data$minimum_nights[data$minimum_nights > 120] <- 120
+
+# Vérification des valeurs NA
+checkNoNa <- function(data){
+  for (i in 1:ncol(data)){
+    if (sum(is.na(data[,i])) > 0){
+      print(paste("Column", colnames(data)[i], "a", sum(is.na(data[,i])), "valeur NA"))
+    }
+  }
+}
+
+# Sous-ensemble des données
+data <- subset(data, select = c("room_type", "price", "minimum_nights", "neighbourhood", 
+                                "number_of_reviews", "review_scores_rating", 
+                                "calculated_host_listings_count", "availability_365", 
+                                "bedrooms", "beds", "bathrooms"))
+
+checkNoNa(data)
+
+```
+
+```{r}
+# Analyse exploratoire des données
+questionr::describe(data)
+
+```
+
+```{r}
+# Visualisation des données
+pairs(data[, c("price", "minimum_nights", "review_scores_rating", 
+               "calculated_host_listings_count", "availability_365", 
+               "bedrooms", "beds", "bathrooms")], 
+      main = "Nuages de points pour les variables")
+
+```
+```{r}
+plot(data$minimum_nights, data$price)
+```
+```{r}
+plot(data$review_scores_rating, data$price)
+```
+```{r}
+plot(data$availability_365, data$price)
+```
+```{r}
+plot(data$bedrooms, data$price)
+```
+```{r}
+plot(data$beds, data$price)
+```
+```{r}
+plot(data$bathrooms, data$price)
+```
+
+
+```{r}
+# Régression linéaire
+# Création du modèle initial
+modele <- lm(price ~ ., data = data)
+summary(modele)
+
+```
+
+```{r}
+# choix des variables
+modele <- lm(price ~ minimum_nights + review_scores_rating + 
+             calculated_host_listings_count + availability_365 + 
+             bedrooms + beds + bathrooms, data = data)
+summary(modele)
+
+```
+
+
+```{r}
+# Prédiction
+predict(modele, data.frame(minimum_nights = 1, review_scores_rating = 4.21, 
+                           calculated_host_listings_count = 1, availability_365 = 100, 
+                           bedrooms = 4, beds = 4, bathrooms = 1))
+
+```
+
