@@ -1,0 +1,41 @@
+data <- read.csv("Téléchargements/listings.csv")
+head(data)
+
+# enlever le "$" de chaque prix et transformer en numérique
+data$price <- as.numeric(gsub("\\$", "", data$price))
+
+# supprimer les na de la colonne price
+data <- data[!is.na(data$price),]
+data <- data[!is.na(data$review_scores_rating),]
+data <- data[!is.na(data$bathrooms),]
+data <- data[!is.na(data$bedrooms),]
+data$beds[is.na(data$beds)] <- 1
+data$minimum_nights[data$minimum_nights > 120] <- 120
+
+checkNoNa <- function(data){
+  for (i in 1:ncol(data)){
+    if (sum(is.na(data[,i])) > 0){
+      print(paste("Column", colnames(data)[i], "a", sum(is.na(data[,i])), "valeur NA"))
+    }
+  }
+}
+
+data <- subset(data, select = c("room_type", "price", "minimum_nights", "neighbourhood", "number_of_reviews", "review_scores_rating", "calculated_host_listings_count", "availability_365", "bedrooms", "minimum_nights", "beds", "bedrooms", "bathrooms", "number_of_reviews"))
+checkNoNa(data)
+
+questionr::describe(data)
+plot(data$review_scores_rating, data$price)
+plot(data$minimum_nights, data$price)
+
+
+modele <- lm(price ~ ., data = data)
+
+summary(modele)
+
+# On peut voir que les variables "room_type", "neighbourhood" et "number_of_reviews" ne sont pas significatives
+# On va donc les retirer du modèle
+modele <- lm(price ~ minimum_nights + review_scores_rating + calculated_host_listings_count + availability_365 + bedrooms + beds + bathrooms, data = data)
+
+summary(modele)
+
+predict(modele, data.frame(minimum_nights = 1, review_scores_rating = 4.21, calculated_host_listings_count = 1, availability_365 = 100, bedrooms = 4, beds = 4, bathrooms = 1))
